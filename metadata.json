@@ -1,0 +1,8 @@
+
+{
+  "name": "Lumina Recovery",
+  "description": "An AI-powered behavioral addiction recovery companion providing pattern detection, compassionate intervention, and personalized support using Gemini 3.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
