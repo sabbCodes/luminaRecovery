@@ -9,6 +9,7 @@ const LiveSupport: React.FC = () => {
   const [isActive, setIsActive] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isModelSpeaking, setIsModelSpeaking] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   
   const audioContextRef = useRef<AudioContext | null>(null);
   const outputAudioContextRef = useRef<AudioContext | null>(null);
@@ -32,6 +33,7 @@ const LiveSupport: React.FC = () => {
     setIsActive(false);
     setIsConnecting(false);
     setIsModelSpeaking(false);
+    setIsMuted(false);
   };
 
   const startSession = async () => {
@@ -60,11 +62,14 @@ const LiveSupport: React.FC = () => {
             const base64Pcm = encodeAudio(new Uint8Array(int16.buffer));
             
             /* Solely rely on sessionPromise resolves to send realtime input to avoid race conditions */
-            sessionPromise.then(session => {
-              session.sendRealtimeInput({
-                media: { data: base64Pcm, mimeType: 'audio/pcm;rate=16000' }
+            /* If muted, don't send audio to avoid accidental interruptions */
+            if (!isMuted) {
+              sessionPromise.then(session => {
+                session.sendRealtimeInput({
+                  media: { data: base64Pcm, mimeType: 'audio/pcm;rate=16000' }
+                });
               });
-            });
+            }
           };
 
           source.connect(scriptProcessor);
@@ -173,13 +178,27 @@ const LiveSupport: React.FC = () => {
               Start Conversation
             </button>
           ) : (
-            <button 
-              onClick={stopSession}
-              className="bg-rose-500 text-white px-10 py-4 rounded-2xl font-bold text-lg hover:bg-rose-600 shadow-xl shadow-rose-200 transition-all active:scale-95 flex items-center gap-3"
-            >
-              <PhoneOff size={24} />
-              End Session
-            </button>
+            <div className="flex flex-col sm:flex-row gap-4 items-center">
+              <button 
+                onClick={() => setIsMuted(!isMuted)}
+                className={`px-8 py-4 rounded-2xl font-bold text-lg transition-all active:scale-95 flex items-center gap-3 ${
+                  isMuted 
+                    ? 'bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200' 
+                    : 'bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200'
+                }`}
+              >
+                {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
+                {isMuted ? "Unmute Mic" : "Mute Mic"}
+              </button>
+
+              <button 
+                onClick={stopSession}
+                className="bg-rose-500 text-white px-10 py-4 rounded-2xl font-bold text-lg hover:bg-rose-600 shadow-xl shadow-rose-200 transition-all active:scale-95 flex items-center gap-3"
+              >
+                <PhoneOff size={24} />
+                End Session
+              </button>
+            </div>
           )}
         </div>
 
